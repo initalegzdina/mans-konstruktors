@@ -150,10 +150,15 @@ if __name__ == "__main__":
 			if ast_count > 0:
 				for val in json_data['near_earth_objects'][request_date]:
 					if 'name' and 'nasa_jpl_url' and 'estimated_diameter' and 'is_potentially_hazardous_asteroid' and 'close_approach_data' in val:
+						# Gets name of asteroid
 						tmp_ast_name = val['name']
+						# Gets urk of asteroid description
 						tmp_ast_nasa_jpl_url = val['nasa_jpl_url']
+						# Gets id of asteroid
 						tmp_ast_id = val['id']
+						# Gets diameter values - takes kilometers/not meters or miles
 						if 'kilometers' in val['estimated_diameter']:
+							# Gets min and max diameter values
 							if 'estimated_diameter_min' and 'estimated_diameter_max' in val['estimated_diameter']['kilometers']:
 								tmp_ast_diam_min = round(val['estimated_diameter']['kilometers']['estimated_diameter_min'], 3)
 								tmp_ast_diam_max = round(val['estimated_diameter']['kilometers']['estimated_diameter_max'], 3)
@@ -164,19 +169,25 @@ if __name__ == "__main__":
 							tmp_ast_diam_min = -1
 							tmp_ast_diam_max = -1
 
+						# Checks if asteroid is branded as potentially hazardous
 						tmp_ast_hazardous = val['is_potentially_hazardous_asteroid']
 
+						# Checks if there is data in close approach data array
 						if len(val['close_approach_data']) > 0:
+							# Gets close approach data
 							if 'epoch_date_close_approach' and 'relative_velocity' and 'miss_distance' in val['close_approach_data'][0]:
+								# Gets and calculates time in readable form
 								tmp_ast_close_appr_ts = int(val['close_approach_data'][0]['epoch_date_close_approach']/1000)
 								tmp_ast_close_appr_dt_utc = datetime.utcfromtimestamp(tmp_ast_close_appr_ts).strftime('%Y-%m-%d %H:%M:%S')
 								tmp_ast_close_appr_dt = datetime.fromtimestamp(tmp_ast_close_appr_ts).strftime('%Y-%m-%d %H:%M:%S')
 
+								# Gets speed km/h 
 								if 'kilometers_per_hour' in val['close_approach_data'][0]['relative_velocity']:
 									tmp_ast_speed = int(float(val['close_approach_data'][0]['relative_velocity']['kilometers_per_hour']))
 								else:
 									tmp_ast_speed = -1
 
+								# Gets MISS distance
 								if 'kilometers' in val['close_approach_data'][0]['miss_distance']:
 									tmp_ast_miss_dist = round(float(val['close_approach_data'][0]['miss_distance']['kilometers']), 3)
 								else:
