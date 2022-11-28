@@ -29,10 +29,11 @@ logger.info('Loading configuration from file')
 try:
 	config = ConfigParser()
 	config.read('config.ini')
-
+	# Initiating and reading nasa API key and url from config.ini file
 	nasa_api_key = config.get('nasa', 'api_key')
 	nasa_api_url = config.get('nasa', 'api_url')
 
+	# Initiating and reading DB access info from config.ini file
 	mysql_config_mysql_host = config.get('mysql_config', 'mysql_host')
 	mysql_config_mysql_db = config.get('mysql_config', 'mysql_db')
 	mysql_config_mysql_user = config.get('mysql_config', 'mysql_user')
@@ -41,10 +42,12 @@ except:
 	logger.exception('')
 logger.info('DONE')
 
+# Defines and creates connection to DB
 def init_db():
 	global connection
 	connection = mysql.connector.connect(host=mysql_config_mysql_host, database=mysql_config_mysql_db, user=mysql_config_mysql_user, password=mysql_config_mysql_pass)
 
+# Defines and creates cursor
 def get_cursor():
 	global connection
 	try:
@@ -56,7 +59,7 @@ def get_cursor():
 		connection.commit()
 	return connection.cursor()
 
-# Check if asteroid exists in db
+# Checks if asteroid exists in db
 def mysql_check_if_ast_exists_in_db(request_day, ast_id):
 	records = []
 	cursor = get_cursor()
@@ -71,7 +74,7 @@ def mysql_check_if_ast_exists_in_db(request_day, ast_id):
 		pass
 	return records[0][0]
 
-# Asteroid value insert
+# Inserts asteroid values into ast_daily table in DB
 def mysql_insert_ast_into_db(create_date, hazardous, name, url, diam_min, diam_max, ts, dt_utc, dt_local, speed, distance, ast_id):
 	cursor = get_cursor()
 	try:
@@ -83,6 +86,7 @@ def mysql_insert_ast_into_db(create_date, hazardous, name, url, diam_min, diam_m
 		logger.error('Problem inserting asteroid values into DB: ' + str(e))
 		pass
 
+# Puts arrays containing info about asteroids into DB, checks each asteroid in array.
 def push_asteroids_arrays_to_db(request_day, ast_array, hazardous):
 	for asteroid in ast_array:
 		if mysql_check_if_ast_exists_in_db(request_day, asteroid[9]) == 0:
@@ -96,6 +100,7 @@ if __name__ == "__main__":
 	connection = None
 	connected = False
 
+	# Starts connection to DB
 	init_db()
 
 	# Opening connection to mysql DB
@@ -109,7 +114,7 @@ if __name__ == "__main__":
 			cursor = connection.cursor()
 			cursor.execute("select database();")
 			record = cursor.fetchone()
-			logger.debug('Your connected to - ' + str(record))
+			logger.debug('You are connected to - ' + str(record))
 			connection.commit()
 	except Error as e :
 		logger.error('Error while connecting to MySQL' + str(e))
@@ -120,7 +125,7 @@ if __name__ == "__main__":
 	request_date = str(dt.year) + "-" + str(dt.month).zfill(2) + "-" + str(dt.day).zfill(2)  
 	logger.debug("Generated today's date: " + str(request_date))
 
-
+	# Requests info from NASA API
 	logger.debug("Request url: " + str(nasa_api_url + "rest/v1/feed?start_date=" + request_date + "&end_date=" + request_date + "&api_key=" + nasa_api_key))
 	r = requests.get(nasa_api_url + "rest/v1/feed?start_date=" + request_date + "&end_date=" + request_date + "&api_key=" + nasa_api_key)
 
@@ -128,14 +133,17 @@ if __name__ == "__main__":
 	logger.debug("Response headers: " + str(r.headers))
 	logger.debug("Response content: " + str(r.text))
 
+	# If there is response from NASA API
 	if r.status_code == 200:
 
+		# Response data is parsed as a jason structure
 		json_data = json.loads(r.text)
 
 		ast_safe = []
 		ast_hazardous = []
 
 		if 'element_count' in json_data:
+			# Counts actual asteroids for the day
 			ast_count = int(json_data['element_count'])
 			logger.info("Asteroid count today: " + str(ast_count))
 
@@ -144,7 +152,6 @@ if __name__ == "__main__":
 					if 'name' and 'nasa_jpl_url' and 'estimated_diameter' and 'is_potentially_hazardous_asteroid' and 'close_approach_data' in val:
 						tmp_ast_name = val['name']
 						tmp_ast_nasa_jpl_url = val['nasa_jpl_url']
-						# Getting id of asteroid
 						tmp_ast_id = val['id']
 						if 'kilometers' in val['estimated_diameter']:
 							if 'estimated_diameter_min' and 'estimated_diameter_max' in val['estimated_diameter']['kilometers']:
@@ -203,19 +210,24 @@ if __name__ == "__main__":
 		logger.info("Hazardous asteorids: " + str(len(ast_hazardous)) + " | Safe asteroids: " + str(len(ast_safe)))
 
 		if len(ast_hazardous) > 0:
-
+			# Sorts hazardous asteroid array by time
 			ast_hazardous.sort(key = lambda x: x[4], reverse=False)
 
 			logger.info("Today's possible apocalypse (asteroid impact on earth) times:")
+			
+			# Loops through hazardous asteroid array and prints info starting with closest time
 			for asteroid in ast_hazardous:
 				logger.info(str(asteroid[6]) + " " + str(asteroid[0]) + " " + " | more info: " + str(asteroid[1]))
-
+			
+			# Sorts hazardous asteroid array by passing distance and prints info about the closest one
 			ast_hazardous.sort(key = lambda x: x[8], reverse=False)
 			logger.info("Closest passing distance is for: " + str(ast_hazardous[0][0]) + " at: " + str(int(ast_hazardous[0][8])) + " km | more info: " + str(ast_hazardous[0][1]))
+			# Loops through hazardous astroids array and saves data in DB
 			push_asteroids_arrays_to_db(request_date, ast_hazardous, 1)
 		else:
 			logger.info("No asteroids close passing earth today")
 		if len(ast_safe) > 0:
+			# Loops through safe asteroids array and saves info in DB 
 			push_asteroids_arrays_to_db(request_date, ast_safe, 0)
 
 	else:
