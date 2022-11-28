@@ -2,7 +2,6 @@ import requests
 import json
 import datetime
 import time
-import yaml
 import logging
 import logging.config
 import yaml
@@ -13,7 +12,7 @@ from configparser import ConfigParser
 from mysql.connector import Error
 
 # Loading logging configuration
-with open('./log_worker.yaml', 'r') as stream:
+with open('./log_naked.yaml', 'r') as stream:
 	log_config = yaml.safe_load(stream)
 
 logging.config.dictConfig(log_config)
@@ -163,9 +162,11 @@ if __name__ == "__main__":
 								tmp_ast_diam_min = round(val['estimated_diameter']['kilometers']['estimated_diameter_min'], 3)
 								tmp_ast_diam_max = round(val['estimated_diameter']['kilometers']['estimated_diameter_max'], 3)
 							else:
+								logger.warning("Could not get min and max diameter")
 								tmp_ast_diam_min = -2
 								tmp_ast_diam_max = -2
 						else:
+							logger.warning("Could not get diameter values in km")
 							tmp_ast_diam_min = -1
 							tmp_ast_diam_max = -1
 
@@ -185,14 +186,17 @@ if __name__ == "__main__":
 								if 'kilometers_per_hour' in val['close_approach_data'][0]['relative_velocity']:
 									tmp_ast_speed = int(float(val['close_approach_data'][0]['relative_velocity']['kilometers_per_hour']))
 								else:
+									logger.warning("Could not get speed")
 									tmp_ast_speed = -1
 
 								# Gets MISS distance
 								if 'kilometers' in val['close_approach_data'][0]['miss_distance']:
 									tmp_ast_miss_dist = round(float(val['close_approach_data'][0]['miss_distance']['kilometers']), 3)
 								else:
+									logger.warning("Could not get miss distance")
 									tmp_ast_miss_dist = -1
 							else:
+								logger.warning("Could not get close approach data")
 								tmp_ast_close_appr_ts = -1
 								tmp_ast_close_appr_dt_utc = "1969-12-31 23:59:59"
 								tmp_ast_close_appr_dt = "1969-12-31 23:59:59"
