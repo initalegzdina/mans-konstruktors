@@ -156,7 +156,7 @@ if __name__ == "__main__":
 						# Gets id of asteroid
 						tmp_ast_id = val['id']
 						# Gets magnitude of asteroid
-						tmp_ast_mgn = val['absolute_magnitude_h']
+						tmp_ast_mgn = float(val['absolute_magnitude_h'])
 						# Gets diameter values - takes kilometers/not meters or miles
 						if 'kilometers' in val['estimated_diameter']:
 							# Gets min and max diameter values
@@ -213,7 +213,7 @@ if __name__ == "__main__":
 						logger.info("------------------------------------------------------- >>")
 						logger.info("Asteroid name: " + str(tmp_ast_name) + " | INFO: " + str(tmp_ast_nasa_jpl_url) + " | Diameter: " + str(tmp_ast_diam_min) + " - " + str(tmp_ast_diam_max) + " km | Hazardous: " + str(tmp_ast_hazardous))
 						logger.info("Close approach TS: " + str(tmp_ast_close_appr_ts) + " | Date/time UTC TZ: " + str(tmp_ast_close_appr_dt_utc) + " | Local TZ: " + str(tmp_ast_close_appr_dt))
-						logger.info("Speed: " + str(tmp_ast_speed) + " km/h" + " | MISS distance: " + str(tmp_ast_miss_dist) + " km")
+						logger.info("Speed: " + str(tmp_ast_speed) + " km/h" + " | MISS distance: " + str(tmp_ast_miss_dist) + " km" + " | Magnitude " + str(tmp_ast_mgn) + " km")
 						
 						# Adding asteroid data to the corresponding array
 						if tmp_ast_hazardous == True:
